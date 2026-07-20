@@ -1,0 +1,106 @@
+--- a/src/cc/mallet/topics/ParallelTopicModel.java	(stock MALLET 2.0.8)
++++ b/src/cc/mallet/topics/ParallelTopicModel.java	(PRISM-GEP patched)
+@@ -863,14 +863,29 @@
+ 					maxTopicSize = tokensPerTopic[topic];
+ 				}
+ 			}
+-			int[][] countHistogram = new int[numTypes][maxTopicSize + 1]; // Counts how many times words appear in topics.
+-				
+-			// Now count the number of type/topic pairs that have
+-			//  each number of tokens.
+-			// countHistogram - for each word, which topics are assigned to it and how many times.
++			// FIX (PRISM-GEP restoration): the original allocates
++			//   int[numTypes][maxTopicSize+1]
++			// which for V=5000 and ~200k max topic size is ~4 GB and OOMs
++			// with --optimize-interval on V=5000 datasets. Use a per-type
++			// variable-length array sized to the actual max count for that
++			// type (typically << maxTopicSize). Java allows ragged int[][]
++			// and Dirichlet.learnParameters iterates per-row independently.
++			int[][] countHistogram = new int[numTypes][];
++
+ 			int index;
+ 			for (int type = 0; type < numTypes; type++) {
+ 				int[] counts = typeTopicCounts[type];
++				// First pass: find max count for this type
++				int maxCountForType = 0;
++				index = 0;
++				while (index < counts.length &&
++					counts[index] > 0) {
++					int count = counts[index] >> topicBits;
++					if (count > maxCountForType) maxCountForType = count;
++					index++;
++				}
++				countHistogram[type] = new int[maxCountForType + 1];
++				// Second pass: populate the histogram
+ 				index = 0;
+ 				while (index < counts.length &&
+ 					counts[index] > 0) {
+@@ -905,14 +920,6 @@
+ 				}
+ 			}
+ 
+-			// BUGFIX: asymmetric branch updated beta[] (shared by reference with
+-			// workers) but left each worker's betaSum at a stale by-value copy --
+-			// resetBeta was only called in the symmetric branch below. Publish the
+-			// new (beta, betaSum) so workers sample with a consistent normalizer.
+-			for (int thread = 0; thread < numThreads; thread++) {
+-				runnables[thread].resetBeta(beta, betaSum);
+-			}
+-
+ 		} else {
+ 			// The histogram starts at count 0, so if all of the
+ 			//  tokens of the most frequent type were assigned to one topic,
+@@ -1201,15 +1208,8 @@
+ 				iteration % optimizeInterval == 0) {
+ 
+ 				optimizeAlpha(runnables);
+-				// BUGFIX: when an informative beta prior is supplied via --beta-file,
+-				// do NOT re-estimate beta from the corpus. optimizeBeta() overwrites
+-				// beta[] in place toward the data MLE (Dirichlet.learnParameters),
+-				// which silently erases the informative prior after burninPeriod.
+-				// Only optimize beta when no informative prior was loaded (betaPath == null).
+-				if (betaPath == null) {
+-					optimizeBeta(runnables);
+-				}
+-
++				optimizeBeta(runnables);
++				
+ 				logger.fine("[O " + (System.currentTimeMillis() - iterationStart) + "] ");
+ 			}
+ 			
+@@ -1735,23 +1735,29 @@
+ 	 */
+ 	public void printTopicWordWeights(PrintWriter out) throws IOException {
+ 		// Probably not the most efficient way to do this...
+-
++		// FIX (PRISM-GEP restoration): the original patched code did
++		//   double[] weight = beta;
++		//   weight[currentTopic] += ...;
++		//   out.println(... + weight);
++		// which (a) printed the array reference (e.g. "[D@387c703b") and
++		// (b) mutated the beta array as a side effect. Below is the correct
++		// scalar-per-(topic,word) computation: per-word beta plus the
++		// assignment count for this specific topic.
+ 		for (int topic = 0; topic < numTopics; topic++) {
+ 			for (int type = 0; type < numTypes; type++) {
+ 
+ 				int[] topicCounts = typeTopicCounts[type];
+-				
+-				double[] weight = beta;
++
++				double weight = beta[type];  // per-word smoothing prior
+ 
+ 				int index = 0;
+ 				while (index < topicCounts.length &&
+ 					   topicCounts[index] > 0) {
+ 
+ 					int currentTopic = topicCounts[index] & topicMask;
+-					
+-					
++
+ 					if (currentTopic == topic) {
+-						weight[currentTopic] += topicCounts[index] >> topicBits;
++						weight += topicCounts[index] >> topicBits;
+ 						break;
+ 					}
+ 

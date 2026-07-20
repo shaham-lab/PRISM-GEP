@@ -1,0 +1,133 @@
+{
+  "run_name": "pg_expr_prod",
+  "notes": "Production configuration: Bayes-inversion gene prior with pg_source=expression (raw gene expression frequency). knn15, pca50, expression_threshold 2.0, neighborhood_min_support 1, m20, K5, GMM n_init 1 (full covariance), method-of-moments estimator, unscaled beta, alpha 50, optimize-interval 10, 1000 iterations, 10 seeds. Datasets are ordered small to large. Resumable: skips any (beta, train) step whose output already exists.",
+  "datasets": {
+    "pbmc3k": {
+      "counts_csv": "data/pbmc3k/filtered_pbmc3k_cells_x_genes.csv",
+      "ser_file": "ground_truth_ser/pbmc3k.ser",
+      "organism": "human"
+    },
+    "zeisel_brain": {
+      "counts_csv": "data/zeisel_brain/filtered_zeisel_brain_cells_x_genes.csv",
+      "ser_file": "ground_truth_ser/zeisel_brain.ser",
+      "organism": "mouse"
+    },
+    "breast_cancer": {
+      "counts_csv": "data/breast_cancer/filtered_breast_cancer_cells_x_genes.csv",
+      "ser_file": "ground_truth_ser/breast_cancer.ser",
+      "organism": "human"
+    },
+    "hemogenic_endothelium": {
+      "counts_csv": "data/hemogenic_endothelium/filtered_hemogenic_endothelium_cells_x_genes.csv",
+      "ser_file": "ground_truth_ser/hemogenic_endothelium.ser",
+      "organism": "human"
+    },
+    "pancreas": {
+      "counts_csv": "data/pancreas/filtered_pancreas_cells_x_genes.csv",
+      "ser_file": "ground_truth_ser/pancreas.ser",
+      "organism": "mouse"
+    },
+    "bonemarrow": {
+      "counts_csv": "data/bonemarrow/filtered_bonemarrow_cells_x_genes.csv",
+      "ser_file": "ground_truth_ser/bonemarrow.ser",
+      "organism": "human"
+    },
+    "gastrulation_e75": {
+      "counts_csv": "data/gastrulation_e75/filtered_gastrulation_e75_cells_x_genes.csv",
+      "ser_file": "ground_truth_ser/gastrulation_e75.ser",
+      "organism": "mouse"
+    },
+    "gastrulation_erythroid": {
+      "counts_csv": "data/gastrulation_erythroid/filtered_gastrulation_erythroid_cells_x_genes.csv",
+      "ser_file": "ground_truth_ser/gastrulation_erythroid.ser",
+      "organism": "mouse"
+    },
+    "gastrulation": {
+      "counts_csv": "data/gastrulation/filtered_gastrulation_cells_x_genes.csv",
+      "ser_file": "ground_truth_ser/gastrulation.ser",
+      "organism": "mouse"
+    }
+  },
+  "beta_grid": {
+    "n_neighbors": [
+      15
+    ],
+    "n_pca": [
+      50
+    ],
+    "expression_threshold": [
+      2.0
+    ],
+    "neighborhood_min_support": [
+      1
+    ],
+    "binary_neighborhood_indicator": [
+      true
+    ],
+    "m": [
+      20
+    ],
+    "K_topics": [
+      5
+    ],
+    "random_state": [
+      42
+    ],
+    "max_genes": [
+      null
+    ],
+    "gmm_n_init": [
+      1
+    ],
+    "gmm_covariance": [
+      "full"
+    ],
+    "estimator": [
+      "mom"
+    ],
+    "beta_scale": [
+      "none"
+    ],
+    "pg_source": [
+      "expression"
+    ]
+  },
+  "mallet_grid": {
+    "alpha": [
+      50
+    ],
+    "optimize_interval": [
+      10
+    ],
+    "num_iterations": [
+      1000
+    ],
+    "num_topics": [
+      5
+    ]
+  },
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "evaluation": {
+    "top_n": 20,
+    "q_threshold": 0.05,
+    "go_libraries": {
+      "human": "GO_Biological_Process_2021",
+      "mouse": "GO_Biological_Process_2021"
+    }
+  },
+  "java": {
+    "heap": "8G",
+    "classpath": "mallet/class;mallet/lib/mallet-deps.jar"
+  }
+}

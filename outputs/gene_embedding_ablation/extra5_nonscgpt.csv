@@ -1,0 +1,11 @@
+dataset,method,spearman_abs,n_genes,n_dropped
+bonemarrow,log1p,0.089044445037695,20,0
+bonemarrow,random,0.41144674603624587,20,0
+paul15,log1p,0.19155354158954888,8,0
+paul15,random,0.025540472211939846,8,0
+dentategyrus,log1p,0.35909242322980395,5,0
+dentategyrus,random,0.6155870112510925,5,0
+endoderm_diff,log1p,0.6614378277661478,7,0
+endoderm_diff,random,0.3401680257083046,7,0
+gastrulation_e75,log1p,0.1258149779897113,14,0
+gastrulation_e75,random,0.295093312012232,14,0

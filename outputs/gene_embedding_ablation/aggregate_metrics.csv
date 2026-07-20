@@ -1,0 +1,17 @@
+dataset,method,spearman_abs,n_genes,n_dropped
+pancreas,scgpt,0.8107718435854702,13,2.0
+pancreas,log1p,0.7646138259428255,15,0.0
+pancreas,random,0.3756991391669685,15,0.0
+gastrulation,scgpt,0.3415650255319866,8,3.0
+gastrulation,log1p,0.9629500128629352,11,0.0
+gastrulation,random,0.0141610296009255,11,0.0
+gastrulation_erythroid,scgpt,0.8944271909999159,4,4.0
+gastrulation_erythroid,log1p,0.5188745216627709,8,0.0
+gastrulation_erythroid,random,0.2594372608313854,8,0.0
+hemogenic_endothelium,scgpt,0.0748481188565119,15,0.0
+hemogenic_endothelium,log1p,0.6736330697086077,15,0.0
+hemogenic_endothelium,random,0.4771567577102638,15,0.0
+pancreas,scgpt_contextual,0.7299831901321139,13,
+gastrulation,scgpt_contextual,0.4879500364742666,8,
+gastrulation_erythroid,scgpt_contextual,0.8944271909999159,4,
+hemogenic_endothelium,scgpt_contextual,0.7241555499367534,15,

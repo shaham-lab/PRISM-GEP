@@ -1,0 +1,67 @@
+# PRISM-GEP restoration — Python dependencies
+# Pinned to match shaham-lab/PRISM/requirements.txt where applicable.
+
+# Numerical core
+numpy==1.26.4
+scipy==1.13.1
+pandas==2.2.3
+
+# ML
+scikit-learn==1.6.1     # GaussianMixture, NearestNeighbors, PCA
+
+# Topic modeling + diffusion (required by prism_lib)
+gensim==4.4.0           # LDA-MALLET wrapper base (prism_lib/ldamallet.py)
+pydiffmap==0.2.0.1      # diffusion-map gene embedding (prism_lib/graph_utils.py)
+networkx>=3.0           # graph construction (prism_lib/graph_utils.py, imported at module level)
+
+# HTTP (gene-set library download in scripts/evaluate_all_new_dataset_table.py,
+# which scripts/build_full_metrics_tables.py imports)
+requests>=2.28
+
+# Bio evaluation
+gseapy>=1.1.3           # GO BP enrichment via enrichr (Table 1 columns 2 & 3)
+goatools==1.4.12        # alt enrichment path (already in shaham-lab requirements)
+gget==0.29.2            # alt enrichment path (already in shaham-lab requirements)
+
+# LLM-based coherence (Table 2)
+openai>=1.0             # GPT-4 coherence per Hu et al. 2025
+
+# .pt loading for vendored methods_of_moments.py (only used in --use-saved-prior path;
+# our pipeline.py passes matrices directly so torch is technically optional)
+# torch>=2.0
+
+# Plotting (Figs 3, 4)
+matplotlib==3.10.3
+seaborn==0.13.2
+
+# --- Dataset preprocessing (scripts/preprocess.py: regenerate data/ inputs) ---
+# Only needed to regenerate the filtered_*_cells_x_genes.csv counts matrices from
+# public sources. Not needed to run the GO-BP pipeline on already-filtered data.
+scanpy>=1.10.0          # filter_genes, normalize_total, log1p, highly_variable_genes, EBI/paul15 loaders
+anndata>=0.10.0         # AnnData container (scanpy dependency; pinned for the preprocessing path)
+scvelo>=0.3.1           # builtin dataset loaders (pancreas, bonemarrow, gastrulation subsets, dentategyrus, pbmc68k)
+scikit-misc>=0.3.1      # skmisc.loess backend REQUIRED by highly_variable_genes(flavor="seurat_v3")
+
+# --- OPTIONAL extras (all lazily imported; the core GO-BP pipeline runs without them) ---
+# Stage A works without scanpy: bio/ppmi_knn_over_cells.py implements PCA + kNN with
+# sklearn directly. scanpy/anndata (listed above for preprocessing) also enable the
+# scanpy.pp.neighbors connectivity mode (UMAP-style fuzzy simplicial sets, slightly
+# different from naive kNN).
+#
+# Figure / embedding extras:
+# umap-learn>=0.5      # cell UMAP panels (bio/cell_clustering.py)
+# phate>=1.0           # PHATE embedding comparison (bio/cell_clustering.py)
+# numba>=0.57          # speedups in bio/cell_clustering.py
+# adjustText>=0.8      # label de-overlap (scripts/viz_prism_native_trajectory.py)
+#
+# Ablation / baseline extras (only for the corresponding ablation scripts):
+# torch>=2.0           # scGPT gene-embedding ablation (bio/gene_embeddings.py)
+# gene_trajectory      # GeneTrajectory baseline (scripts/gt_faithful_common.py)
+# metacells, SEACells  # cell-neighborhood alternatives (bio/cell_neighborhoods.py)
+# pyslingshot          # Slingshot cell-ordering baseline (scripts/trajectory_baselines.py)
+# scgpt                # contextual scGPT embeddings (scripts/scgpt_contextual_ablation.py).
+#                      # importing scgpt pulls in torchtext.vocab. If torchtext's C++
+#                      # extension will not load against your torch build, import
+#                      # scripts/_torchtext_shim.py first: it substitutes the only two
+#                      # torchtext names scgpt uses and is a no-op when torchtext works.
+# pillow>=10.0         # PDF page rasterisation (scripts/crop_paper_figures.py)

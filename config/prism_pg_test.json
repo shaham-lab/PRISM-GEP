@@ -1,0 +1,106 @@
+{
+  "run_name": "pg_test",
+  "notes": "Single-variable test of the Bayes-inversion gene prior source: pg_source=expression (raw gene expression frequency) versus pg_source=cooccur (the PPMI co-occurrence marginal), on three datasets. All other settings match the production configuration.",
+  "datasets": {
+    "pbmc3k": {
+      "counts_csv": "data/pbmc3k/filtered_pbmc3k_cells_x_genes.csv",
+      "ser_file": "ground_truth_ser/pbmc3k.ser",
+      "organism": "human"
+    },
+    "zeisel_brain": {
+      "counts_csv": "data/zeisel_brain/filtered_zeisel_brain_cells_x_genes.csv",
+      "ser_file": "ground_truth_ser/zeisel_brain.ser",
+      "organism": "mouse"
+    },
+    "breast_cancer": {
+      "counts_csv": "data/breast_cancer/filtered_breast_cancer_cells_x_genes.csv",
+      "ser_file": "ground_truth_ser/breast_cancer.ser",
+      "organism": "human"
+    },
+    "pancreas": {
+      "counts_csv": "data/pancreas/filtered_pancreas_cells_x_genes.csv",
+      "ser_file": "ground_truth_ser/pancreas.ser",
+      "organism": "mouse"
+    },
+    "hemogenic_endothelium": {
+      "counts_csv": "data/hemogenic_endothelium/filtered_hemogenic_endothelium_cells_x_genes.csv",
+      "ser_file": "ground_truth_ser/hemogenic_endothelium.ser",
+      "organism": "human"
+    }
+  },
+  "beta_grid": {
+    "n_neighbors": [
+      15
+    ],
+    "n_pca": [
+      50
+    ],
+    "expression_threshold": [
+      2.0
+    ],
+    "neighborhood_min_support": [
+      1
+    ],
+    "binary_neighborhood_indicator": [
+      true
+    ],
+    "m": [
+      20
+    ],
+    "K_topics": [
+      5
+    ],
+    "random_state": [
+      42
+    ],
+    "max_genes": [
+      null
+    ],
+    "gmm_n_init": [
+      1
+    ],
+    "gmm_covariance": [
+      "full"
+    ],
+    "estimator": [
+      "mom"
+    ],
+    "beta_scale": [
+      "none"
+    ],
+    "pg_source": [
+      "cooccur",
+      "expression"
+    ]
+  },
+  "mallet_grid": {
+    "alpha": [
+      50
+    ],
+    "optimize_interval": [
+      10
+    ],
+    "num_iterations": [
+      400
+    ],
+    "num_topics": [
+      5
+    ]
+  },
+  "seeds": [
+    0,
+    1
+  ],
+  "evaluation": {
+    "top_n": 20,
+    "q_threshold": 0.05,
+    "go_libraries": {
+      "human": "GO_Biological_Process_2021",
+      "mouse": "GO_Biological_Process_2021"
+    }
+  },
+  "java": {
+    "heap": "8G",
+    "classpath": "mallet/class;mallet/lib/mallet-deps.jar"
+  }
+}

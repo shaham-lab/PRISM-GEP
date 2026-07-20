@@ -1,0 +1,6 @@
+dataset,method,spearman_abs,n_genes,n_dropped
+endoderm_diff,scgpt_contextual,0.8504200642707614,7,0
+bonemarrow,scgpt_contextual,0.9004235692173813,20,0
+paul15,scgpt_contextual,0.316227766016838,4,4
+dentategyrus,scgpt_contextual,0.8720815992723809,5,0
+gastrulation_e75,scgpt_contextual,0.765176992251945,13,1

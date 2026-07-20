@@ -1,0 +1,15 @@
+dataset,variant,n_genes,n_markers,spearman_abs,order
+pancreas,pipeline,15,15,0.7646138259428255,Isl1|Pyy|Gcg|Pax6|Ins1|Ins2|Ghrl|Sst|Neurod1|Hes1|Neurog3|Sox9|Spp1|Krt8|Krt18
+gastrulation,pipeline,11,12,0.16049166881048924,Hbb-y|Hba-x|Pou5f1|Nanog|Mixl1|Mesp1|Eomes|T|Foxa2|Mesp2|Sox17
+gastrulation_erythroid,pipeline,8,9,0.617707763884251,Hba-x|Hbb-y|Hbb-bh1|T|Gata1|Lmo2|Tal1|Klf1
+hemogenic_endothelium,pipeline,15,15,0.6736330697086077,Egfl7|Lmo2|Sox17|Cldn5|Spi1|Gfi1b|Emcn|Runx1|Cd44|Gata2|Myb|Itga2b|Klf1|Gypa|Tal1
+bonemarrow,pipeline,20,20,0.089044445037695,HBA1|EPOR|GATA1|TFRC|HBA2|ALAS2|GYPA|KIT|CD34|HLF|MEIS1|TAL1|AVP|MLLT3|GATA2|NFE2|KLF1|BLVRB|AHSP|HBB
+paul15,pipeline,8,8,0.19155354158954888,Hba-a2|Hbb-b1|Gata2|Gata1|Car2|Klf1|Car1|Zfpm1
+dentategyrus,pipeline,5,5,0.35909242322980395,Neurod6|Sox2|Hes5|Eomes|Snap25
+endoderm_diff,pipeline,7,7,0.6614378277661478,SOX17|GSC|FOXA2|MIXL1|CXCR4|NANOG|POU5F1
+gastrulation_e75,pipeline,14,14,0.1258149779897113,Hand1|Mesp1|T|Snai1|Fgf8|Mixl1|Pou5f1|Gata4|Pax6|Tbx5|Nanog|Foxa2|Sox17|Cer1
+hemogenic_endothelium,incode_old,15,15,0.38733901508244944,Cd44|Myb|Gata2|Gfi1b|Gypa|Itga2b|Spi1|Runx1|Klf1|Emcn|Tal1|Cldn5|Sox17|Egfl7|Lmo2
+hemogenic_endothelium,orders_csv,15,15,0.522065629024171,Cd44|Myb|Gata2|Gfi1b|Gypa|Itga2b|Spi1|Runx1|Klf1|Emcn|Tal1|Cldn5|Sox17|Egfl7|Lmo2
+gastrulation,orders_csv,11,11,0.16049166881048924,Hbb-y|Hba-x|Pou5f1|Nanog|Mixl1|Mesp1|Eomes|T|Foxa2|Mesp2|Sox17
+gastrulation_erythroid,orders_csv,8,8,0.617707763884251,Hba-x|Hbb-y|Hbb-bh1|T|Gata1|Lmo2|Tal1|Klf1
+pancreas,orders_csv,15,15,0.7646138259428255,Isl1|Pyy|Gcg|Pax6|Ins1|Ins2|Ghrl|Sst|Neurod1|Hes1|Neurog3|Sox9|Spp1|Krt8|Krt18
