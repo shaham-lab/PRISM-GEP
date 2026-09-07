@@ -2,20 +2,20 @@
 
 The two tables it replaces scored the SAME nine datasets in the SAME order, so they shared a
 column axis and forced the reader to look in two places. They do NOT, however, measure the
-same thing, and that is the trap this layout has to avoid:
+same thing, and that is the trap this table has to avoid:
 
   groups 1-2  gene ordering, |rho| against the canonical MARKER order
   group 3     cell ordering, |rho| against the published LINEAGE rank of each cell
 
 A number in group 3 is therefore not comparable with a number in group 1 or 2. Every group
-header states its own metric for that reason, and the Mean/Median/Rank aggregates and the
-bold/underline marks are computed WITHIN a group, never across.
+label states its own metric for that reason, and the mean/median/mean_rank aggregates and the
+best/second marks are computed WITHIN a group, never across.
 
 Second trap: the "two label ranks only" caveat (an ordering and its reverse score alike, so
 the column cannot separate methods) applies to Hemogenic and Endoderm in the CELL-ordering
 sense only. In the gene-ordering groups those same datasets carry 15 and 7 markers and are
-perfectly discriminating. The dagger is therefore attached to the cell-ordering group header,
-not to the shared column headings.
+perfectly discriminating. The caveat therefore belongs to the cell-ordering group, not to
+the datasets themselves.
 
 === 2026-07-20: the gene-ordering groups now come from the ten-seed run ===
 
@@ -60,16 +60,16 @@ erythroid, static pancreas). They ship together on purpose.
 
 On six of the nine datasets the gene-gene cosine graph is disconnected, the second diffusion
 eigenvalue is exactly 1, and the ordering eigenvector is an arbitrary basis choice inside a
-degenerate eigenspace. Printing a bare point value there implies a determinacy the cell does
-not have, and printing "---" implies the pipeline produces nothing, which is also false: the
-shipped pipeline returns a specific reproducible number. So those cells print the point value
-followed by the interval the value spans under a 1e-7 input perturbation, in SQUARE brackets.
-This is deliberately the least self-serving option available: the intervals reach ABOVE
-PRISM-GEP on several datasets (erythroid to .964, Dentate Gyrus to .975, Endoderm to .945), so
-the convention shows log1p's best case, not just its instability.
+degenerate eigenspace. Reporting a bare point value there implies a determinacy the cell does
+not have, and reporting nothing implies the pipeline produces nothing, which is also false: the
+shipped pipeline returns a specific reproducible number. So those cells carry the point value
+together with the interval the value spans under a 1e-7 input perturbation (columns
+`range_lo`, `range_hi`). This is deliberately the least self-serving option available: the
+intervals reach ABOVE PRISM-GEP on several datasets (erythroid to .964, Dentate Gyrus to .975,
+Endoderm to .945), so the convention shows log1p's best case, not just its instability.
 
-Brackets = perturbation range (log1p only). Round \tiny parentheses = sd over seeds. Two
-parenthetical meanings, both spelled out in the caption.
+`range_lo`/`range_hi` = perturbation range (log1p only). `sd` = sd over seeds. Two different
+uncertainties, kept in separate columns.
 
 The aggregate columns used to carry a third: the same aggregate with Gastrulation E7.5
 excluded. Dropped 2026-07-20 (Yanir). They were introduced when E7.5 read .062, a collapsed
@@ -85,7 +85,11 @@ Inputs : outputs/gene_embedding_ablation/tenseed_2026-07-20/seed_summary.csv
          outputs/gene_embedding_ablation/aggregate_metrics_9ds.csv   (published, for the asserts)
          outputs/trajectory/cell_traj_all_datasets.csv
          outputs/trajectory/cell_traj_baselines_all.csv
-Output : paper/figures/tab_combined_main.tex
+Output : results/tables/tab_combined_main.csv
+         Tidy rows: group, method, dataset, value, sd, range_lo, range_hi, mark. The
+         `dataset` column also carries the within-group aggregates as the pseudo-datasets
+         "mean", "median" and "mean_rank". `mark` is "best" / "second" within the group
+         under the tie guard described in mark(), else empty.
 """
 
 import sys
@@ -97,9 +101,9 @@ import pandas as pd
 
 WS = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(WS / "scripts"))
-# release layout: paper/figures/, created on demand (scripts/paths.py)
-from paths import figures_dir  # noqa: E402
-DEFAULT_OUT = figures_dir() / "tab_combined_main.tex"
+# release layout: results/tables/, created on demand (scripts/paths.py)
+from paths import tables_dir  # noqa: E402
+DEFAULT_OUT = tables_dir() / "tab_combined_main.csv"
 TENSEED = WS / "outputs" / "gene_embedding_ablation" / "tenseed_2026-07-20"
 AUDIT = WS / "outputs" / "gene_embedding_ablation" / "audit_2026-07-20"
 
@@ -131,18 +135,18 @@ def f3(v):
 
 
 def cell_mean_sd(v, sd):
-    """`.844\\,\\tiny{(.057)}` -- the convention already used by tab_prism_vs_sota_15ds_o0.tex."""
+    """Decoration for a seeded cell: the sd over seeds (written to the `sd` column)."""
     if sd is None or (isinstance(sd, float) and np.isnan(sd)):
-        return f3(v)
-    return rf"{f3(v)}\,\tiny{{({f3(sd)})}}"
+        return None
+    return {"sd": sd}
 
 
 def cell_range(v, lo, hi):
-    """`.160\\,\\tiny{[.009, .821]}` -- point value plus its perturbation interval.
-
-    SQUARE brackets, so it cannot be confused with the round-parenthesis sd.
+    """Decoration for an ill-conditioned log1p cell: the perturbation interval
+    (written to `range_lo` / `range_hi`, a different column pair from `sd` so the two
+    uncertainties cannot be confused).
     """
-    return rf"{f3(v)}\,\tiny{{[{f3(lo)}, {f3(hi)}]}}"
+    return {"range_lo": lo, "range_hi": hi}
 
 
 def crank(vals, live, higher_better=True):
@@ -158,7 +162,7 @@ def crank(vals, live, higher_better=True):
 
 
 def mark(vals, i, fmt=f3, higher_better=True):
-    """Bold the best and underline the second best in a column.
+    """Return "best" for the best and "second" for the second best in a column, else "".
 
     The floors (chance level, PCA-1) COMPETE here rather than being excluded. Excluding them
     looked tidier but asserted something false. Note that the case this docstring used to cite,
@@ -166,31 +170,30 @@ def mark(vals, i, fmt=f3, higher_better=True):
     true chance level there is .417, below PRISM-GEP. The principle stands anyway, and PCA-1
     still takes Endoderm in the cell-ordering group.
 
-    A mark is only printed when the rank is held by exactly ONE method. On an exact tie
-    every tied cell stays plain, because bolding one of them asserts a separation the
+    A mark is only given when the rank is held by exactly ONE method. On an exact tie
+    every tied cell stays unmarked, because marking one of them asserts a separation the
     numbers do not contain. The three-way .894 tie on Gastrulation Erythroid is the case
     this guard exists for, and build_gene_embed_9ds.py leaves it unmarked too.
 
-    The guard also covers ties AT PRINTED PRECISION, not just exact ones. Ranking still runs on
+    The guard also covers ties AT REPORTED PRECISION, not just exact ones. Ranking still runs on
     the raw values, so the mean-rank aggregate is untouched, but the mark is suppressed when
-    another live cell prints the same string. Bonemarrow in group 2 is why: scGPT contextual
-    .90349 leads PRISM-GEP .90262, both print .903, and Welch gives p = 0.59. A bold .903
-    sitting next to a plain .903 reads as a typesetting error and claims a separation that is
-    neither visible nor significant.
+    another live cell rounds to the same string. Bonemarrow in group 2 is why: scGPT contextual
+    .90349 leads PRISM-GEP .90262, both round to .903, and Welch gives p = 0.59. Marking one
+    .903 next to a plain .903 claims a separation that is neither visible nor significant.
     """
     live = [j for j, v in enumerate(vals) if not np.isnan(v)]
     if np.isnan(vals[i]) or not live:
-        return fmt(vals[i])
+        return ""
     ranks = crank(vals, live, higher_better=higher_better)
     s = fmt(vals[i])
     holders = sum(1 for j in live if ranks[j] == ranks[i])
     prints_same = any(j != i and fmt(vals[j]) == s for j in live)
     if holders == 1 and not prints_same:
         if ranks[i] == 1:
-            return f"\\best{{{s}}}"
+            return "best"
         if ranks[i] == 2:
-            return f"\\secondbest{{{s}}}"
-    return s
+            return "second"
+    return ""
 
 
 def _colranks(sub):
@@ -205,15 +208,15 @@ def _colranks(sub):
     return out
 
 
-def group_block(title, rows):
-    """rows = list of (label, values, decorations). Returns latex lines.
+def group_block(title, rows, keys):
+    """rows = list of (label, values, decorations). Returns a list of tidy row dicts.
 
     `values` drives every rank, aggregate and mark. `decorations` is a per-dataset list of
-    already-rendered cell strings (mean+sd, or point+perturbation range) or None to print the
-    bare value. Keeping the two apart is the point: the sd and the perturbation interval are
-    presentation, never inputs to a comparison.
+    dicts ({"sd": ...} or {"range_lo": ..., "range_hi": ...}) or None. Keeping the two apart
+    is the point: the sd and the perturbation interval are reported alongside the value,
+    never used as inputs to a comparison.
 
-    Every aggregate (Mean, Med., Rank) is computed over all nine datasets.
+    Every aggregate (mean, median, mean_rank) is computed over all nine datasets.
     """
     M = np.array([r[1] for r in rows], dtype=float)
     means = np.nanmean(M, axis=1)
@@ -227,32 +230,27 @@ def group_block(title, rows):
     else:
         mranks = np.full(len(rows), np.nan)
 
-    def agg_cell(full_vec, i, fmt=f3, higher_better=True):
-        return mark(full_vec, i, fmt=fmt, higher_better=higher_better)
+    def rnd(v, nd=3):
+        return None if np.isnan(v) else round(float(v), nd)
 
-    # Group headers are BOLD, not italic (Yanir 2026-07-19). Set here rather than by hand in
-    # the fragment: this file is regenerated, so a hand edit there is silently reverted the
-    # next time anyone runs the script.
-    out = [f"\\multicolumn{{13}}{{l}}{{\\textbf{{{title}}}}}\\\\"]
+    out = []
     for i, (label, vals, deco) in enumerate(rows):
-        cells = []
-        for j in range(M.shape[1]):
-            plain = mark(M[:, j], i)
-            d = None if deco is None else deco[j]
-            if d is None:
-                cells.append(plain)
-            elif plain.startswith("\\best{"):
-                cells.append(f"\\best{{{d}}}")
-            elif plain.startswith("\\secondbest{"):
-                cells.append(f"\\secondbest{{{d}}}")
-            else:
-                cells.append(d)
-        cells.append(agg_cell(means, i))
-        cells.append(agg_cell(meds, i))
+        for j, k in enumerate(keys):
+            d = {} if deco is None or deco[j] is None else deco[j]
+            out.append(dict(group=title, method=label, dataset=k, value=rnd(M[i, j]),
+                            sd=rnd(d.get("sd", np.nan)),
+                            range_lo=rnd(d.get("range_lo", np.nan)),
+                            range_hi=rnd(d.get("range_hi", np.nan)),
+                            mark=mark(M[:, j], i)))
+        out.append(dict(group=title, method=label, dataset="mean", value=rnd(means[i]),
+                        sd=None, range_lo=None, range_hi=None, mark=mark(means, i)))
+        out.append(dict(group=title, method=label, dataset="median", value=rnd(meds[i]),
+                        sd=None, range_lo=None, range_hi=None, mark=mark(meds, i)))
         # Mean rank: two decimals, and LOWER is better, so the comparison direction flips.
         rank_fmt = lambda v: f"{v:.2f}"
-        cells.append(agg_cell(mranks, i, fmt=rank_fmt, higher_better=False))
-        out.append(f"{label} & " + " & ".join(cells) + " \\\\")
+        out.append(dict(group=title, method=label, dataset="mean_rank", value=rnd(mranks[i], 2),
+                        sd=None, range_lo=None, range_hi=None,
+                        mark=mark(mranks, i, fmt=rank_fmt, higher_better=False)))
     return out
 
 
@@ -350,7 +348,7 @@ def main():
 
     G1 = [("PRISM-GEP (full)", *ge["prism_full"]),
           ("log1p", *ge["log1p"]),
-          ("random \\emph{(chance level)}", *ge["random"])]
+          ("random (chance level)", *ge["random"])]
     G2 = [("PRISM-GEP (int.)", *ge["prism_int"]),
           ("scGPT static", *ge["scgpt"]),
           ("scGPT contextual", *ge["scgpt_contextual"])]
@@ -358,35 +356,22 @@ def main():
     G3 = [("PRISM-GEP (JS diff.-map)", ctrow(ct, "prism_mean"), None),
           ("Slingshot", ctrow(cb, "Slingshot"), None),
           ("DPT / PAGA-DPT", ctrow(cb, "DPT"), None),
-          ("PCA-1 \\emph{(floor)}", ctrow(cb, "PCA_1"), None)]
+          ("PCA-1 (floor)", ctrow(cb, "PCA_1"), None)]
 
-    lines = []
-    lines += group_block("Gene ordering, $|\\rho|$ vs canonical marker order: full marker set",
-                         G1)
-    lines.append("\\midrule")
-    lines += group_block("Gene ordering, $|\\rho|$ vs canonical marker order: "
-                         "scGPT-embeddable intersection", G2)
-    lines.append("\\midrule")
-    lines += group_block("Cell ordering, $|\\rho|$ vs published lineage rank "
-                         "($^{\\dagger}$Hemog.\\ and Endo.\\ have two label ranks only, "
-                         "so those columns cannot separate methods)", G3)
+    rows = []
+    rows += group_block("gene ordering, |rho| vs canonical marker order: full marker set", G1, keys)
+    rows += group_block("gene ordering, |rho| vs canonical marker order: "
+                        "scGPT-embeddable intersection", G2, keys)
+    rows += group_block("cell ordering, |rho| vs published lineage rank", G3, keys)
 
-    hdr = ("\\textbf{Method} & " + " & ".join(lbl for _, lbl in DS)
-           + " & \\textbf{Mean} & \\textbf{Med.} & \\textbf{Rank} \\\\")
-    frag = "\n".join([
-        "% AUTO-GENERATED by scripts/build_combined_main_table.py -- do not hand-edit.",
-        "% Groups measure DIFFERENT quantities. Aggregates and bold/underline are within-group.",
-        "% Gene-ordering groups: ten-seed run outputs/gene_embedding_ablation/tenseed_2026-07-20/.",
-        "% \\tiny(round) = sd over seeds; \\tiny[square] = log1p perturbation range.",
-        "\\begin{tabular}{l" + "c" * len(DS) + "|ccc}",
-        "\\toprule", hdr, "\\midrule",
-        *lines,
-        "\\bottomrule", "\\end{tabular}", "",
-    ])
-    out.write_text(frag, encoding="utf-8")
+    df = pd.DataFrame(rows, columns=["group", "method", "dataset", "value", "sd",
+                                     "range_lo", "range_hi", "mark"])
+    df.to_csv(out, index=False)
     print(f"wrote {out}")
     print(f"  3 groups, {len(G1)+len(G2)+len(G3)} method rows, {len(DS)} datasets")
-    print("  bold = best in group, underline = second in group, floors compete for bold and underline")
+    print("  mark: best / second within the group, floors compete for the marks")
+    print("  cell-ordering group: Hemog. and Endo. have two label ranks only, "
+          "so those columns cannot separate methods")
 
 
 if __name__ == "__main__":

@@ -77,3 +77,5 @@ Thumbs.db
 # Generator side-outputs (regenerated on demand)
 /results/robustness_aggregates_*.csv
 /results/full_metrics_o*.csv
+# CSV tables written by scripts/build_*.py (regenerated on demand)
+/results/tables/

@@ -17,9 +17,10 @@ tables regenerate without them.
 
 > This release ships what is needed to reproduce the results, together with
 > [`supplementary.pdf`](supplementary.pdf) — the paper's Supplementary Material, which documents
-> the method stages, the metric definitions and the tables these scripts regenerate. The rendered
-> manuscript itself and the figure PDFs are **not** committed. Raw datasets are **not** committed
-> either — see [Data](#data) for accessions and the preprocessing recipe.
+> the method stages, the metric definitions and the tables these scripts regenerate. The table
+> generators emit **CSV files of numbers**, not LaTeX. The rendered manuscript itself and the
+> figure PDFs are **not** committed. Raw datasets are **not** committed either — see
+> [Data](#data) for accessions and the preprocessing recipe.
 
 ---
 
@@ -42,7 +43,8 @@ Generated at run time (git-ignored, created on demand):
 
 ```
 outputs/        Pipeline intermediates: β priors, per-seed MALLET output, baselines
-paper/figures/  Where the figure and table generators write their PDFs and LaTeX fragments
+results/tables/ Where the table generators (scripts/build_*.py) write their CSV tables
+paper/figures/  Where the figure generators write their PDFs
 mallet/         Your patched MALLET checkout (see below)
 ```
 
@@ -204,8 +206,11 @@ python scripts/train_prism_standard.py <dataset> --optimize-interval 0 \
 
 The per-seed GO-BP scores for every method in the paper — PRISM-GEP at both optimization
 intervals, MALLET, and the comparison methods — ship in `results/full_metrics_perseed.csv`.
-The benchmark table generators read that file, so every benchmark table regenerates from a
-fresh clone with no training run at all:
+The benchmark table generators read that file (and the aggregate it produces,
+`results/full_metrics_combined_4config.csv`), so every benchmark table regenerates from a
+fresh clone with no training run at all. Each generator writes one or more **CSV** files to
+`results/tables/` (created on demand, git-ignored); the exceptions are noted in the table
+below.
 
 ```bash
 python scripts/build_full_metrics_tables.py       # GO-BP coherence / coverage / strength
@@ -215,12 +220,54 @@ python scripts/build_robustness_agg_15ds.py       # aggregate robustness table (
 python scripts/build_llm_table_all9.py            # LLM-plausibility panel (9 datasets)
 ```
 
+| Script | Writes |
+|---|---|
+| `build_full_metrics_tables.py` | `results/full_metrics_combined_4config.csv`, `results/full_metrics_MALLETopt0.csv`, `results/full_metrics_MALLETopt10.csv` (15 datasets x 6 methods x 3 GO-BP metrics, 10-seed means; written to `results/`, not `results/tables/`) |
+| `build_split_tables.py` | `results/tables/tab_prism_vs_sota_{9,14,15}ds_{o0,o10}.csv` (tidy rows: dataset, method, metric, mean, sd, mark) and `tab_prism_vs_mallet_{9,14,15}ds_{o0,o10}.csv` (one row per dataset x metric: PRISM-GEP and MALLET mean, sd, and the Welch-significant winner or `tie`) |
+| `build_unified_table1.py` | `results/tables/tab_unified_{9,15}ds_opt0.csv` (all six methods in one tidy table) and `results/robustness_aggregates_{9ds,15ds}.csv` (mean rank with bootstrap CI, geometric composite, worst-axis) |
+| `build_robustness_agg_15ds.py` | `results/tables/tab_robustness_agg_15ds_vs_specialized.csv` (PRISM-GEP vs the four specialized methods: mean rank with 95% bootstrap CI, geometric composite, worst-axis, last-place count) |
+| `build_llm_table_all9.py` | `results/tables/tab_llm_all9.csv` (GPT-4 plausibility per dataset and method, with mean-rank, mean and std summary rows) |
+
 Steps 1–3b above regenerate PRISM-GEP's own numbers end to end. `build_full_metrics_tables.py`
 reads the opt0 arms (the headline PRISM and MALLET columns) from the step-3b grid layout and
 the opt10 PRISM column from step 3's flat `outputs/<dataset>/seed<N>/`, caching each newly
 scored seed back into `results/full_metrics_perseed.csv`.
 
-### 5. Figures
+### 5. Trajectory and gene-embedding tables
+
+The gene-ordering and cell-ordering evaluations read the per-dataset CSVs shipped under
+`outputs/trajectory/` and `outputs/gene_embedding_ablation/` (marker orders, ten-seed
+summaries, baseline scores), so these tables also regenerate from a fresh clone:
+
+```bash
+python scripts/build_combined_main_table.py       # main-text gene + cell ordering table
+python scripts/build_traj_gene_9ds_ci.py          # per-dataset gene ordering, seed sd + marker-bootstrap CI
+python scripts/build_traj_cell_9ds.py             # cell ordering, 9 datasets
+python scripts/traj_cell_merge_table.py           # cell ordering, all labelled datasets + diagnostics
+python scripts/build_gene_embed_9ds.py            # gene-embedding comparison, 9 datasets
+```
+
+| Script | Writes (under `results/tables/`) |
+|---|---|
+| `build_combined_main_table.py` | `tab_combined_main.csv` (tidy rows: group, method, dataset, value, sd, range_lo, range_hi, mark; the aggregates appear as the pseudo-datasets `mean`, `median`, `mean_rank`) |
+| `build_traj_gene_9ds_ci.py` | `tab_traj_gene_9ds_ci.csv` (dataset, method, rho, s_seed, boot_mean, ci_lo, ci_hi, n_panel) |
+| `build_traj_cell_9ds.py` | `tab_traj_cell_9ds.csv` (per-dataset rho per method, mean, median, mean rank) |
+| `traj_cell_merge_table.py` | `tab_traj_cell_all.csv` and `tab_traj_cell_all_diagnostics.csv` |
+| `build_gene_embed_9ds.py` | `tab_gene_embed_9ds.csv`, plus the long-format `outputs/gene_embedding_ablation/aggregate_metrics_9ds.csv` |
+
+`scripts/build_traj_gene_8ds_supp.py` belongs to the same family but is a **figure**
+generator: it draws the main-text gene-trajectory mean/median panel and prints its aggregates
+to stdout. It writes no table file.
+
+Conventions shared by every generated CSV: plain numbers only (scores to 3 decimals, GO-BP
+strength and mean ranks to 2), no typographic markers; where the paper marks a best or
+second-best entry the CSV carries it as a `mark` column (`best` / `second`, empty otherwise);
+an empty cell means the value is undefined (no significant enrichment, or no bootstrap
+interval), never zero.
+
+### 6. Figures
+
+Figures are still generated here — only the LaTeX table fragments are gone.
 
 | Figure (paper) | Script |
 |---|---|
@@ -232,7 +279,9 @@ scored seed back into `results/full_metrics_perseed.csv`.
 | GEP embedding panels (supp) | `bio/cell_clustering.py` |
 | Top-genes / topic-word heatmaps (supp) | `bio/heatmaps.py --legible` |
 
-All generators write to `paper/figures/`, which is created on demand and git-ignored.
+All figure generators write PDFs to `paper/figures/`, which is created on demand and
+git-ignored. No script writes a LaTeX fragment: the table generators of steps 4 and 5 write
+CSV to `results/tables/` instead.
 
 The benchmark-summary generators (`make_gobp_robustness_fig.py`, `make_llm_win_fig.py`,
 `build_llm_table_all9.py`, `build_robustness_agg_15ds.py`, `build_split_tables.py`,
@@ -252,14 +301,18 @@ here. Figure 1 and the two reduction diagrams are hand-drawn schematics; the res
 by analysis code kept outside this release:
 
 - the developmental-lineage trajectory panels (`traj_dev_erythroid`, `traj_dev_bonemarrow`)
-- the cell-trajectory recovery and gene-embedding comparison tables
 - the simulation benchmark, activation-cascade and myeloid-marker supplementary panels
 - the topic-count sensitivity plot and the held-out perplexity curve
 - the four qualitative gene-ordering illustrations
 
-Everything else — both benchmark tables, the GO-BP robustness and LLM-plausibility figures, the
-gene-trajectory panels, the cascade heatmaps, the GEP embedding panels and the per-program
-heatmaps — regenerates from this repository.
+Everything else — every benchmark and trajectory table, the GO-BP robustness and
+LLM-plausibility figures, the gene-trajectory panels, the cascade heatmaps, the GEP embedding
+panels and the per-program heatmaps — regenerates from this repository.
+
+**Typesetting the tables.** The generators here stop at the numbers. Turning those numbers
+into the manuscript's typeset tables is a separate step that happens outside this repository,
+in the authors' manuscript project, and produces no result of its own. A reader reproducing
+the work wants the values, and those are the CSV files in `results/tables/`.
 
 ### Gene-embedding ablation (Stage F swap)
 
