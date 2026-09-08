@@ -24,7 +24,7 @@ authors:
 license: MIT
 repository-code: "https://github.com/shaham-lab/PRISM-GEP"
 version: 1.0.0
-date-released: 2026-09-06
+date-released: 2026-09-10
 keywords:
   - single-cell RNA-seq
   - gene expression programs
