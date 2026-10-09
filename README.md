@@ -116,6 +116,21 @@ cd mallet && ant jar && cd ..
 
 ---
 
+## Quick test (bundled data, under a minute)
+
+One public dataset ships with the repository as test data: Pancreas endocrinogenesis
+(Bastidas-Ponce et al. 2019, distributed with scVelo), preprocessed exactly as in step 1 below,
+3,696 cells by 5,000 genes, with its 8 published cell-type labels. It lives in `data/pancreas/`.
+
+```bash
+python scripts/check_test_data.py
+```
+
+This recomputes the informed prior (Stages A-D) on the bundled data and compares it with the
+reference `data/pancreas/expected_beta_prism.csv`. The computation is deterministic, so a correct
+installation prints `PASS`. It needs only the Python requirements, not Java or MALLET. To go on
+to train and evaluate on the same data, continue with step 2 below using `<dataset> = pancreas`.
+
 ## Reproduce the paper
 
 ### 1. Get + preprocess a dataset

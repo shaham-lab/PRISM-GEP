@@ -4,6 +4,11 @@ Raw single-cell datasets are **not** committed to this repository (they total se
 This file lists the public sources and the deterministic preprocessing that regenerates the
 inputs the pipeline reads.
 
+**Exception, test data:** `data/pancreas/` ships the preprocessed Pancreas dataset (3,696 cells
+by 5,000 genes, raw counts, with cell-type labels) and the reference prior computed from it, so
+the installation can be checked without downloading anything. See "Quick test" in the main
+README.
+
 ## Expected on-disk layout
 
 Each dataset lives under `data/<dataset>/` with a counts matrix and (for cell-type recovery
